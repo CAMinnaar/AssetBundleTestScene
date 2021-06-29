@@ -5,15 +5,15 @@ using UnityEngine;
 using UnityEditor;
 //Added system read support.
 using System.IO;
-//Added support for date system.
-//using System;
+//Added support for reading assets from a remote sources.
+using System.Net;
 
 public class CustomImportSettings : AssetPostprocessor
 {
     //Global default max size
     int textureDefaultMaxSize = 1024;
     //Input directory location
-    string inputDirectory = "Assets/Art/Input/1024";
+    string inputDirectory = "Assets/Art/Input";
 
     void OnPreprocessAsset(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {

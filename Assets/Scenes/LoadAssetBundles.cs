@@ -28,7 +28,5 @@ public class LoadAssetBundles : MonoBehaviour
             Debug.Log("Failed to load asset bundle " + localAssetBundle.name);
             yield break;
         }
-
-
     }
 }
