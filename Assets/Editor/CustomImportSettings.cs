@@ -10,38 +10,49 @@ using System.Net;
 
 public class CustomImportSettings : AssetPostprocessor
 {
-    //Global default max size
-    int textureDefaultMaxSize = 1024;
     //Input directory location
     string inputDirectory = "Assets/Art/Input";
+    //Local destination of JSON file.
+    string configPath = "Assets/Art/JSON/config.json";
 
-    void OnPreprocessAsset(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+    void OnPreprocessAsset()
     {
-        //Check path to 256 assets directory.
-        if (!Directory.Exists("Assets/Art/Input/256"))
-        {
-            Debug.Log("Asset 512 directory does not exist, creating new folder.");
+        string JSONData = "";
 
-            //Create asset bundle directory if it does not already exist.
-            Directory.CreateDirectory("Assets/Art/Input/256");
+        using (StreamReader stream = new StreamReader(configPath))
+        {
+            //Read the JSON contents.
+            JSONData = stream.ReadToEnd();
         }
 
-        //Check path to 512 assets directory.
-        if (!Directory.Exists("Assets/Art/Input/512"))
+        //Get the config collection information.
+        ConfigData configsInJSON = JsonUtility.FromJson<ConfigData>(JSONData);
+
+        //Check path to texture size 0 assets directory.
+        if (!Directory.Exists("Assets/Art/Input/" + configsInJSON.config.target_sizes[0]))
         {
-            Debug.Log("Asset 512 directory does not exist, creating new folder.");
+            Debug.Log("Asset " + configsInJSON.config.target_sizes[0] + "directory does not exist, creating new folder.");
 
             //Create asset bundle directory if it does not already exist.
-            Directory.CreateDirectory("Assets/Art/Input/512");
+            Directory.CreateDirectory("Assets/Art/Input/" + configsInJSON.config.target_sizes[0]);
         }
 
-        //Check path to 1024 assets directory.
-        if (!Directory.Exists("Assets/Art/Input/1024"))
+        //Check path to texture size 1 assets directory.
+        if (!Directory.Exists("Assets/Art/Input/" + configsInJSON.config.target_sizes[1]))
         {
-            Debug.Log("Asset 1024 directory does not exist, creating new folder.");
+            Debug.Log("Asset " + configsInJSON.config.target_sizes[1] + "directory does not exist, creating new folder.");
 
             //Create asset bundle directory if it does not already exist.
-            Directory.CreateDirectory("Assets/Art/Input/1024");
+            Directory.CreateDirectory("Assets/Art/Input/" + configsInJSON.config.target_sizes[1]);
+        }
+
+        //Check path to texture size 2 assets directory.
+        if (!Directory.Exists("Assets/Art/Input/" + configsInJSON.config.target_sizes[2]))
+        {
+            Debug.Log("Asset " + configsInJSON.config.target_sizes[2] + "directory does not exist, creating new folder.");
+
+            //Create asset bundle directory if it does not already exist.
+            Directory.CreateDirectory("Assets/Art/Input/" + configsInJSON.config.target_sizes[2]);
         }
 
         //Check path to converted images assets directory.
@@ -57,6 +68,17 @@ public class CustomImportSettings : AssetPostprocessor
     //Add this function to a subclass to get a notification when a texture has completed importing.
     void OnPreprocessTexture()
     {
+        string JSONData = "";
+
+        using (StreamReader stream = new StreamReader(configPath))
+        {
+            //Read the JSON contents.
+            JSONData = stream.ReadToEnd();
+        }
+
+        //Get the config collection information.
+        ConfigData configsInJSON = JsonUtility.FromJson<ConfigData>(JSONData);
+
         //Get the texture importer.
         TextureImporter textureImporter = assetImporter as TextureImporter;
 
@@ -80,24 +102,29 @@ public class CustomImportSettings : AssetPostprocessor
                 textureImporter.convertToNormalmap = true;
             }
 
-            textureImporter.maxTextureSize = textureDefaultMaxSize;
+            //Set texture default max size
+            textureImporter.maxTextureSize = configsInJSON.config.target_sizes[0];
 
             //Check if texture(s) are in input folder.
             if (assetPath.IndexOf(inputDirectory) == 0)
             {
                 if (assetPath.Contains(".png"))
                 {
-                    //Get asset path and replace 1024 with 256.
-                    string asset256Path = (assetPath.Replace("1024", "256"));
+                    //Get asset path and replace texture size 0 with texture size 1.
+                    string configTextureSize0 = configsInJSON.config.target_sizes[0].ToString();
+                    string configTextureSize1 = configsInJSON.config.target_sizes[1].ToString();
+                    string configTextureSize2 = configsInJSON.config.target_sizes[2].ToString();
 
-                    //Make a copy of original asset and move it to 256 directory.
-                    AssetDatabase.CopyAsset(assetPath, asset256Path);
+                    string asset1Path = (assetPath.Replace(configTextureSize0, configTextureSize1));
 
-                    //Get asset path and replace 1024 with 512.
-                    string asset512Path = (assetPath.Replace("1024", "512"));
+                    //Make a copy of original asset and move it to texture size 1 directory.
+                    AssetDatabase.CopyAsset(assetPath, asset1Path);
 
-                    //Make a copy of original asset and move it to 512 directory.
-                    AssetDatabase.CopyAsset(assetPath, asset512Path);
+                    //Get asset path and replace texture size 0 with texture size 2.
+                    string asset2Path = (assetPath.Replace(configTextureSize0, configTextureSize2));
+
+                    //Make a copy of original asset and move it to texture size 2 directory.
+                    AssetDatabase.CopyAsset(assetPath, asset2Path);
                 }
             }
 
@@ -125,6 +152,8 @@ public class CustomImportSettings : AssetPostprocessor
             return;
         }
 
+        ConfigData configsInJSON = JsonUtility.FromJson<ConfigData>(JSONData);
+
         //Get the asset importer based off of input texture asset path.
         AssetImporter assetImporter = AssetImporter.GetAtPath(assetPath);
 
@@ -140,42 +169,46 @@ public class CustomImportSettings : AssetPostprocessor
 
         if (!actualAssetName.Contains(".png"))
         {
-            TextureScaler.ThreadedScalePNG(inputTexture, 1024, 1024, true, bundleName);
+            int configTextureSize0 = configsInJSON.config.target_sizes[0];
+            TextureScaler.ThreadedScalePNG(inputTexture, configTextureSize0, configTextureSize0, true, bundleName);
             AssetDatabase.DeleteAsset(assetPath);
         }
         else
         {
-            if (assetPath.Contains("256"))
+            if (assetPath.Contains(configsInJSON.config.target_sizes[0].ToString()))
             {
+                int configTextureSize0 = configsInJSON.config.target_sizes[0];
                 //Scale input texture using bilinear scaling.
-                TextureScaler.Bilinear(inputTexture, 256, 256);
+                TextureScaler.Bilinear(inputTexture, configTextureSize0, configTextureSize0);
                 //Scale input texture using point scaling.
-                //TextureScaler.Point(inputTexture, 256, 256);
+                //TextureScaler.Point(inputTexture, configTextureSize0, configTextureSize0);
 
                 //Set asset bundle name and variant.
-                assetImporter.SetAssetBundleNameAndVariant(bundleName, "256");
+                assetImporter.SetAssetBundleNameAndVariant(bundleName, configTextureSize0.ToString());
             }
 
-            if (assetPath.Contains("512"))
+            if (assetPath.Contains(configsInJSON.config.target_sizes[1].ToString()))
             {
+                int configTextureSize1 = configsInJSON.config.target_sizes[1];
                 //Scale input texture using bilinear scaling.
-                TextureScaler.Bilinear(inputTexture, 512, 512);
+                TextureScaler.Bilinear(inputTexture, configTextureSize1, configTextureSize1);
                 //Scale input texture using point scaling.
-                //TextureScaler.Point(inputTexture, 512, 512);
+                //TextureScaler.Point(inputTexture, configTextureSize1, configTextureSize1);
 
                 //Set asset bundle name and variant.
-                assetImporter.SetAssetBundleNameAndVariant(bundleName, "512");
+                assetImporter.SetAssetBundleNameAndVariant(bundleName, configTextureSize1.ToString());
             }
 
-            if (assetPath.Contains("1024"))
+            if (assetPath.Contains(configsInJSON.config.target_sizes[2].ToString()))
             {
+                int configTextureSize2 = configsInJSON.config.target_sizes[2];
                 //Scale input texture using bilinear scaling.
-                TextureScaler.Bilinear(inputTexture, 1024, 1024);
+                TextureScaler.Bilinear(inputTexture, configTextureSize2, configTextureSize2);
                 //Scale input texture using point scaling
-                //TextureScaler.Point(inputTexture, 1024, 1024);
+                //TextureScaler.Point(inputTexture, configTextureSize2, configTextureSize2);
 
                 //Set asset bundle name and variant.
-                assetImporter.SetAssetBundleNameAndVariant(bundleName, "1024");
+                assetImporter.SetAssetBundleNameAndVariant(bundleName, configTextureSize2.ToString());
             }
         }
 

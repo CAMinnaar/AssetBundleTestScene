@@ -1,0 +1,7 @@
+{
+	"config": {
+		"target_sizes": [1024, 512, 256],
+		"bit_depth": 8,
+		"format": "png"
+	}
+}
