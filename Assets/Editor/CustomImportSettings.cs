@@ -152,6 +152,15 @@ public class CustomImportSettings : AssetPostprocessor
             return;
         }
 
+        string JSONData = "";
+
+        using (StreamReader stream = new StreamReader(configPath))
+        {
+            //Read the JSON contents.
+            JSONData = stream.ReadToEnd();
+        }
+
+        //Get the config collection information.
         ConfigData configsInJSON = JsonUtility.FromJson<ConfigData>(JSONData);
 
         //Get the asset importer based off of input texture asset path.
