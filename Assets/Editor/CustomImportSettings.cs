@@ -108,7 +108,7 @@ public class CustomImportSettings : AssetPostprocessor
             //Check if texture(s) are in input folder.
             if (assetPath.IndexOf(inputDirectory) == 0)
             {
-                if (assetPath.Contains(".png"))
+                if (assetPath.Contains(configsInJSON.config.format))
                 {
                     //Get asset path and replace texture size 0 with texture size 1.
                     string configTextureSize0 = configsInJSON.config.target_sizes[0].ToString();
@@ -176,7 +176,7 @@ public class CustomImportSettings : AssetPostprocessor
         //Remove any unused asset bundle names.
         AssetDatabase.RemoveUnusedAssetBundleNames();
 
-        if (!actualAssetName.Contains(".png"))
+        if (!actualAssetName.Contains(configsInJSON.config.format))
         {
             int configTextureSize0 = configsInJSON.config.target_sizes[0];
             TextureScaler.ThreadedScalePNG(inputTexture, configTextureSize0, configTextureSize0, true, bundleName);
